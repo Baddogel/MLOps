@@ -4,27 +4,46 @@ pipeline {
     stages {
         stage('Setup Environment') {
             steps {
-                sh 'pip install -r requirements.txt --break-system-packages'
+                echo 'Creating a virtual environment, if not created'
+                    sh '''
+                        if [ ! -d ".venv" ]; then
+                            env_name=${1:-".venv"}
+                            python3 -m venv "$env_name"
+                            echo "Virtual environment '$env_name' has been created."
+                        fi
+                    '''
+                    echo 'Activating the virtual environment'
+                    sh '''
+                        env_name=${1:-".venv"}
+                        chmod +x ./$env_name/bin/activate
+                        ./$env_name/bin/activate
+                    '''
+                    echo 'Dependency installation'
+                    sh '''
+                        env_name=${1:-".venv"}
+                        $env_name/bin/pip3 install -r requirements.txt
+                        echo "Dependencies installed."
+                    '''
             }
         }
         stage('Create Data') {
             steps {
-                sh 'python3 data_creation.py'
+                sh '.venv/bin/python3 data_creation.py'
             }
         }
         stage('Preprocessing') {
             steps {
-                sh 'python3 model_preprocessing.py'
+                sh '.venv/bin/python3 model_preprocessing.py'
             }
         }
         stage('Model learning') {
             steps {
-                sh 'python3 model_preparation.py'
+                sh '.venv/bin/python3 model_preparation.py'
             }
         }
         stage('Model testing') {
             steps {
-                sh 'python3 model_testing.py'
+                sh '.venv/bin/python3 model_testing.py'
             }
         }
     }
